@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.github.euler-io</groupId>
+    <artifactId>docker-euler-files</artifactId>
+    <version>euler-files</version>
+    <packaging>jar</packaging>
+
+    <name>Euler - Basic File Processing Docker Image</name>
+    <url>https://github.com/euler-io/euler-api</url>
+    <description>Basic file processing docker image for Euler API</description>
+    <properties>
+        <euler.version></euler.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.github.euler-io</groupId>
+            <artifactId>euler-elasticsearch</artifactId>
+            <version>${euler.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.github.euler-io</groupId>
+                    <artifactId>euler-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.github.euler-io</groupId>
+                    <artifactId>euler-config</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+    </dependencies>
+
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+    </distributionManagement>
+
+</project>
