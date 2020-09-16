@@ -1,15 +1,15 @@
-ARG BASE_IMAGE=eulerio/euler-api-opendistro:latest
+ARG DOCKER_TAG=latest
 
 FROM maven as builder
 
-ARG EULER_VERSION
+ARG DOCKER_TAG=latest
 
 # Download dependencies from com.github.euler-io:euler-elasticsearch:$EULER_VERSION
 COPY pom.xml .
-RUN mkdir /dependencies \
-    && mvn dependency:copy-dependencies -Deuler.version=${EULER_VERSION} -DoutputDirectory=/dependencies -f ./pom.xml
+COPY download-dependencies.sh .
+RUN ./download-dependencies.sh
 
-FROM $BASE_IMAGE
+FROM eulerio/euler-api-opendistro:$DOCKER_TAG
 
 USER root
 
