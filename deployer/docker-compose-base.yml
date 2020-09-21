@@ -1,0 +1,245 @@
+version: '3.7'
+
+# docker-compose -d -f docker-compose.yml up
+# docker stack deploy -c docker-compose.yml euler
+
+{%- set nodes = NODES | int %}
+
+services:
+ proxy:
+  image: nginx:1.17.5-alpine
+  ports:
+   - 80:80
+   - 443:443
+  secrets:
+   - source: root-ca.pem
+     target: /etc/nginx/certs/root-ca.pem
+     mode: 0400
+   - source: frontend-key.pem
+     target: /etc/nginx/certs/frontend-key.pem
+     mode: 0400
+   - source: frontend.pem
+     target: /etc/nginx/certs/frontend.pem
+     mode: 0400
+   - source: dhparam.pem
+     target: /etc/nginx/certs/dhparam.pem
+     mode: 0400
+   - source: nginx_proxy.conf
+     target: /etc/nginx/conf.d/default.conf
+     mode: 0400
+  networks:
+   - frontend
+  depends_on:
+   - euler-api
+   - kibana
+
+ euler-api:
+  image: {{ APP_REPOSITORY }}admin-api:{{ APP_VERSION }}
+  hostname: euler-api
+  environment:
+   JAVA_OPTS: "-Dconfig.file=/etc/app/admin.conf"
+  secrets:
+   - source: admin.conf
+     target: /etc/app/admin.conf
+     mode: 0400
+     uid: '1100'
+     gid: '1100'
+   - source: admin-api.p12
+     target: /etc/app/certs/cert.p12
+     mode: 0400
+     uid: '1100'
+     gid: '1100'
+   - source: root-ca.pem
+     target: /etc/app/certs/root-ca.pem
+     mode: 0400
+     uid: '1100'
+     gid: '1100'
+#  volumes:
+#   - cases-data:/var/iped/cases
+#   - euler-data:/var/iped/data
+#  healthcheck:
+#   test: curl --cacert /etc/app/certs/root-ca.pem -sf https://admin-api:8443/api/health || exit 1
+#   interval: 30s
+#   timeout: 10s
+#   retries: 3
+  networks:
+   - frontend
+   - backend
+  depends_on:{% for i in range(1, nodes + 1) %}
+   - opendistro-{{ i }}
+{% endfor %}
+
+ kibana:
+  image: amazon/opendistro-for-elasticsearch-kibana:{{ OPENDISTRO_VERSION }}
+  environment:
+   ELASTICSEARCH_URL: https://opendistro-1:9200
+  secrets:
+   - source: root-ca.pem
+     target: /usr/share/kibana/config/certs/ca/root-ca.pem
+     mode: 0400
+     uid: '1000'
+     gid: '1000'
+   - source: kibana-key.pem
+     target: /usr/share/kibana/config/certs/kibana/kibana-key.pem
+     mode: 0400
+     uid: '1000'
+     gid: '1000'
+   - source: kibana.pem
+     target: /usr/share/kibana/config/certs/kibana/kibana.pem
+     mode: 0400
+     uid: '1000'
+     gid: '1000'
+   - source: kibana.yml
+     target: /usr/share/kibana/config/kibana.yml
+     mode: 0400
+     uid: '1000'
+     gid: '1000'
+#  healthcheck:
+#   test: curl --cacert /usr/share/kibana/config/certs/ca/root-ca.pem -sf https://kibana:5601/kibana/ui || exit 1
+#   interval: 30s
+#   timeout: 10s
+#   retries: 5
+  networks:
+   - frontend
+   - backend
+  depends_on:{% for i in range(1, nodes + 1) %}
+   - elastic-{{ i }}
+{% endfor %}
+
+{% for i in range(1, nodes + 1) %}
+ opendistro-{{ i }}:
+  image: amazon/opendistro-for-elasticsearch:{{ OPENDISTRO_VERSION }}
+  hostname: opendistro-{{ i }}
+  environment:
+   - cluster.name=euler-cluster-{{ SERVER_NAME }}
+   - node.name=opendistro-{{ i }}
+{%- set comma = joiner(",") %}
+   - discovery.seed_hosts={% for i in range(1, nodes + 1) %}{{ comma() }}opendistro-{{ i }}{% endfor %}
+{%- set comma = joiner(",") %}
+   - cluster.initial_master_nodes={% for i in range(1, nodes + 1) %}{{ comma() }}opendistro-{{ i }}{% endfor %}
+   - bootstrap.memory_lock=false
+   - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+  ulimits:
+   memlock:
+    soft: -1
+    hard: -1
+   nofile:
+    soft: 65536
+    hard: 65536
+  secrets:
+   - source: root-ca.pem
+     target: /usr/share/elasticsearch/config/certs/ca/root-ca.pem
+     mode: 0400
+     uid: '1000'
+     gid: '1000'
+   - source: node{{ i }}.pem
+     target: /usr/share/elasticsearch/config/certs/elasticsearch/node.pem
+     mode: 0400
+     uid: '1000'
+     gid: '1000'
+   - source: node{{ i }}-key.pem
+     target: /usr/share/elasticsearch/config/certs/elasticsearch/node-key.pem
+     mode: 0400
+     uid: '1000'
+     gid: '1000'
+   - source: opendistro-roles_mapping.yml
+     target: /usr/share/elasticsearch/plugins/opendistro_security/securityconfig/roles_mapping.yml
+     mode: 0400
+     uid: '1000'
+     gid: '1000'
+   - source: opendistro-config.yml
+     target: /usr/share/elasticsearch/plugins/opendistro_security/securityconfig/config.yml
+     mode: 0400
+     uid: '1000'
+     gid: '1000'
+   - source: opendistro-roles.yml
+     target: /usr/share/elasticsearch/plugins/opendistro_security/securityconfig/roles.yml
+     mode: 0400
+     uid: '1000'
+     gid: '1000'
+   - source: opendistro-internal_users.yml
+     target: /usr/share/elasticsearch/plugins/opendistro_security/securityconfig/internal_users.yml
+     mode: 0400
+     uid: '1000'
+     gid: '1000'
+   - source: elasticsearch.yml
+     target: /usr/share/elasticsearch/config/elasticsearch.yml
+     mode: 0400
+     uid: '1000'
+     gid: '1000'
+  volumes:
+   - opendistro-{{ i }}:/usr/share/elasticsearch/data
+  healthcheck:
+   test: curl --cacert /usr/share/elasticsearch/config/certs/ca/root-ca.pem -s https://opendistro-{{ i }}:9200 >/dev/null; if [[ $$? == 52 ]]; then echo 0; else echo 1; fi
+   interval: 30s
+   timeout: 10s
+   retries: 5
+  networks:
+   - backend
+{% endfor %}
+
+networks:
+ frontend:
+ backend:
+
+volumes:
+# cases-data:
+#  external: true
+# iped-data:
+#  external: true
+{% for i in range(1, nodes + 1) %}
+ opendistro-{{ i }}:
+  external: true
+{% endfor %}
+
+secrets:
+ nginx_proxy.conf:
+  file: ./config/nginx_proxy.conf
+ nginx_ui.conf:
+  file: ./config/nginx_ui.conf
+ admin.conf:
+  file: ./config/admin.conf
+ search.conf:
+  file: ./config/search.conf
+ opendistro-roles_mapping.yml:
+  file: ./config/opendistro-roles_mapping.yml
+ opendistro-config.yml:
+  file: ./config/opendistro-config.yml
+ opendistro-roles.yml:
+  file: ./config/opendistro-roles.yml
+ opendistro-internal_users.yml:
+  file: ./config/opendistro-internal_users.yml
+ root-ca.pem:
+  file: ./certificates/root-ca.pem
+ kibana.yml:
+  file: ./config/kibana.yml
+ kibana-key.pem:
+  file: ./certificates/kibana-key.pem
+ kibana.pem:
+  file: ./certificates/kibana.pem
+ elasticsearch.yml:
+  file: ./config/elasticsearch.yml
+ frontend.pem:
+  file: ./certificates/frontend.pem
+ frontend-key.pem:
+  file: ./certificates/frontend-key.pem
+ search-ui.pem:
+  file: ./certificates/search-ui.pem
+ search-ui-key.pem:
+  file: ./certificates/search-ui-key.pem
+ admin-ui.pem:
+  file: ./certificates/admin-ui.pem
+ admin-ui-key.pem:
+  file: ./certificates/admin-ui-key.pem
+ admin-api.p12:
+  file: ./certificates/admin-api.p12
+ search-api.p12:
+  file: ./certificates/search-api.p12
+ dhparam.pem:
+  file: ./certificates/dhparam.pem
+{% for i in range(1, nodes + 1) %}
+ node{{ i }}-key.pem:
+  file: ./certificates/node{{ i }}-key.pem
+ node{{ i }}.pem:
+  file: ./certificates/node{{ i }}.pem
+{% endfor %}

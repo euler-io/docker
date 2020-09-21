@@ -1,0 +1,29 @@
+---
+# This is the internal user database
+# The hash value is a bcrypt hash and can be generated with plugin/tools/hash.sh
+
+_meta:
+  type: "internalusers"
+  config_version: 2
+
+# Define your internal users here
+
+admin:
+  hash: "{{ ADMIN_PWD_HASH }}"
+  reserved: true
+  backend_roles:
+  - "admin"
+  description: "Admin user"
+
+iped-admin:
+  hash: "{{ IPED_ADMIN_PWD_HASH }}"
+  reserved: true
+  backend_roles:
+  - "iped-admin"
+  - "iped-search"
+  description: "Iped admin user"
+
+kibanaserver:
+  hash: "{{ KIBANA_SERVER_PWD_HASH }}"
+  reserved: true
+  description: "Kibanaserver user"
