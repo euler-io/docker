@@ -1,0 +1,19 @@
+version: '3.7'
+services:
+ euler-http-api:
+  image: eulerio/euler-api-basic:latest
+  environment:
+   - LANG=C.UTF-8
+   - LC_ALL=C.UTF-8
+   - EULER_OPTS=-Deuler.http-api.elasticsearch.ssl.allow-insecure=yes -Deuler.http-api.elasticsearch.hosts=["https:\\elastic-dev:9200"]
+  ports:
+   - 8080:8080
+  depends_on:
+   - elastic-dev
+ elastic-dev:
+  image: amazon/opendistro-for-elasticsearch:1.9.0
+  environment:
+   discovery.type: single-node
+  ports:
+   - 9200:9200
+   - 9600:9600
