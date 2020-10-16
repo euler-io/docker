@@ -29,4 +29,4 @@ COPY --from=builder /build/basic.conf /app/
 RUN chown euler:euler -R /app
 USER euler
 
-CMD java -jar /app/opendistro-http-api.jar -Dconfig.file=/app/basic.conf -Dloader.path=/app/lib ${JAVA_OPTS} com.github.euler.api.ESEulerHTTPAPI
+CMD java -jar /app/opendistro-http-api.jar -Dloader.path=/app/lib ${JAVA_OPTS} com.github.euler.api.ESEulerHTTPAPI
