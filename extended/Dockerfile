@@ -24,7 +24,7 @@ RUN echo "templates: [" > /build/templates.conf \
     && cat /build/update-files.conf >> /build/templates.conf \
     && echo "]" >> /build/templates.conf
 
-FROM eulerio/euler-api-opendistro:$DOCKER_TAG
+FROM eulerio/euler-api-opendistro-graal:$DOCKER_TAG
 
 ENV JAVA_OPTS=""
 
@@ -36,5 +36,8 @@ COPY --from=builder /build/templates.conf /app/
 COPY --from=builder /build/basic-config.jar /app/lib
 RUN chown euler:euler -R /app
 USER euler
+
+#Install python language
+RUN gu install python
 
 CMD java -Dloader.path=/app/lib ${JAVA_OPTS} -jar /app/opendistro-http-api.jar
