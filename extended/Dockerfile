@@ -5,13 +5,13 @@ FROM maven as builder
 ARG DOCKER_TAG=latest
 
 RUN mkdir /build && cd /build
-COPY ./basic/pom.xml /build
-COPY ./basic/download-dependencies.sh /build
+COPY ./extended/pom.xml /build
+COPY ./extended/download-dependencies.sh /build
 COPY ./templates /build
 
-COPY ./basic/reference.conf /build
+COPY ./extended/reference.conf /build
 RUN cd /build \
-    && jar cvf basic-config.jar reference.conf
+    && jar cvf extended-config.jar reference.conf
 
 # Download dependencies from com.github.euler-io:euler-elasticsearch:$EULER_VERSION
 RUN /build/download-dependencies.sh
@@ -33,7 +33,7 @@ USER root
 # Copy dependencies to lib dir
 COPY --from=builder /dependencies/* /app/lib/
 COPY --from=builder /build/templates.conf /app/
-COPY --from=builder /build/basic-config.jar /app/lib
+COPY --from=builder /build/extended-config.jar /app/lib
 RUN chown euler:euler -R /app
 USER euler
 
