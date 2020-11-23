@@ -37,7 +37,4 @@ COPY --from=builder /build/extended-config.jar /app/lib
 RUN chown euler:euler -R /app
 USER euler
 
-#Install python language
-RUN gu install python
-
 CMD java -Dloader.path=/app/lib ${JAVA_OPTS} -jar /app/opendistro-http-api.jar

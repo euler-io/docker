@@ -6,7 +6,7 @@ if [[ ${DOCKER_TAG} == 'latest' || ${DOCKER_TAG} == 'dev' ]]; then
 else
 	depVersion=$DOCKER_TAG
 fi
-echo "Using com.github.euler-io:euler-elasticsearch:$depVersion"
+echo "Using: $depVersion"
 
 mkdir /dependencies
 mvn dependency:copy-dependencies -Deuler.version=${depVersion} -DoutputDirectory=/dependencies -f $(dirname "$(readlink -f "$0")")/pom.xml
