@@ -9,4 +9,4 @@ fi
 echo "Using: $depVersion"
 
 mkdir /dependencies
-mvn dependency:copy-dependencies -Deuler.version=${depVersion} -DoutputDirectory=/dependencies -f $(dirname "$(readlink -f "$0")")/pom.xml
+mvn dependency:copy-dependencies -Deuler.version=${depVersion} -DincludeScope=runtime -DoutputDirectory=/dependencies -f $(dirname "$(readlink -f "$0")")/pom.xml
