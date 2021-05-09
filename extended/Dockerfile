@@ -27,6 +27,7 @@ RUN echo "templates: [" > /build/templates.conf \
 FROM eulerio/euler-api-opendistro-graal:$DOCKER_TAG
 
 ENV JAVA_OPTS=""
+ENV APP_ARGS=""
 
 USER root
 
@@ -37,4 +38,4 @@ COPY --from=builder /build/extended-config.jar /app/lib
 RUN chown euler:euler -R /app
 USER euler
 
-CMD java -Dloader.path=/app/lib ${JAVA_OPTS} -jar /app/opendistro-http-api.jar
+CMD java -Dloader.path=/app/lib ${JAVA_OPTS} -jar /app/opendistro-http-api.jar ${APP_ARGS}
